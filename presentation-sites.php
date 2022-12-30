@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Sitios para presentaciones
- * Plugin URI: 
+ * Plugin URI: https://github.com/edgon06/presentation-sites
  * Description: Gestionar venta de puestos en ubicaciones variadas para un grupo dedicado a hacer presentaciones presenciales.
  * Version: 0.1
  * Text Domain: tbare-wordpress-plugin
