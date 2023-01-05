@@ -49,3 +49,137 @@ $supports = array(
     register_post_type( 'ubicacion' , $args );
 }
 add_action( 'init', 'prefix_create_custom_post_type' );
+
+
+// crear tablas en bd de wordpress
+require_once( ABSPATH . 'wp-admin/includes/upgrade.php');
+function create_tables(){
+    global $wpdb;
+
+    $tablaSalas = $wpdb->prefix . "salas";
+    $tablaAsientos = $wpdb->prefix . "asientos";
+    $tablaEventos = $wpdb->prefix . "eventos";
+
+  
+    $createdTables = dbDelta(
+        " CREATE TABLE $tablaSalas (
+            ID BIGINT(10) unsigned NOT NULL AUTO_INCREMENT,
+            nombre VARCHAR(60) NOT NULL DEFAULT 'Sala',
+            ubicacion VARCHAR(100),
+            PRIMARY KEY (ID)
+            )CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+            CREATE TABLE $tablaAsientos (
+            ID BIGINT(10) unsigned NOT NULL AUTO_INCREMENT,
+            cod_ref VARCHAR(10),
+            sala BIGINT(10),
+            estado VARCHAR(15) DEFAULT 'disponible',
+            usuario VARCHAR(50),
+            PRIMARY KEY (ID)
+            )CHARACTER SET utf8 COLLATE utf8_general_ci;
+            
+            CREATE TABLE $tablaEventos (
+            ID BIGINT(10) unsigned NOT NULL AUTO_INCREMENT,
+            nombre VARCHAR(60) NOT NULL DEFAULT 'Evento',
+            sala BIGINT(10),
+            fecha_inicio DATE,
+            fecha_final DATE,
+            PRIMARY KEY (ID)            
+            )CHARACTER SET utf8 COLLATE utf8_general_ci;
+        "
+    );
+}
+register_activation_hook( __FILE__, 'create_tables');
+
+//Eliminar tablas una vez desactivado el plugin
+function delete_tables(){
+    global $wpdb;
+
+    $tablaSalas = $wpdb->prefix . "salas";
+    $tablaAsientos = $wpdb->prefix . "asientos";
+    $tablaEventos = $wpdb->prefix . "eventos";
+
+    dbDelta("DROP TABLE $tablaSalas;");
+    dbDelta("DROP TABLE $tablaAsientos;");  
+    dbDelta("DROP TABLE $tablaEventos;");
+        
+}
+register_deactivation_hook(__FILE__, 'delete_tables');
+
+// Crear página de administración en escritorio de Wordpress
+function create_admin_menu(){
+$pageTitle = "Plugin control panel";
+$menuTitle = "Presentaciones";
+$capability = "administrator";
+$menuSlug = "presentaciones-admin";
+$function = "admin_menu_content";
+$icon = "dashicons-admin-multisite"; // From https://developer.wordpress.org/resource/dashicons/#admin-multisite
+$position = 9;
+
+    add_menu_page(
+       $pageTitle,//__($pageTitle, 'my-textdomain'),
+       $menuTitle,//__($menuTitle, 'my-textdomain'),
+       $capability,
+       $menuSlug,
+       $function,
+       $icon,
+       $position 
+    );    
+}
+add_action('admin_menu', 'create_admin_menu');
+
+function admin_menu_content(){
+
+    ?>
+			<h1>
+				<?php esc_html_e( 'Administración de presentaciones.', 'my-plugin-textdomain' ); ?>
+			</h1>
+		<?php
+
+    global $wpdb;
+    $tablaSalas = $wpdb->prefix . "salas";
+    $tablaAsientos = $wpdb->prefix . "asientos";
+    $tablaEventos = $wpdb->prefix . "eventos";
+
+    $salas = $wpdb->get_results("SELECT * FROM `$tablaSalas`");
+    $result = '';
+    // 
+    foreach ($salas as $sala) {
+        $result .= '<tr>
+            <td>'.$sala->ID.'</td>
+            <td>'.$sala->nombre.'</td>
+            <td>'.$sala->ubicacion.'</td>
+        </tr>';
+    }
+
+    $result .= '<br>';
+    $asientos = $wpdb->get_results("SELECT * FROM `$tablaAsientos`");
+    // 
+    foreach ($asientos as $asiento) {
+        $result .= '<tr>
+            <td>'.$asiento->ID.'</td>
+            <td>'.$asiento->sala.'</td>
+            <td>'.$asiento->estado.'</td>
+        </tr>';
+    }
+
+    $result .= '<br>';
+    $eventos = $wpdb->get_results("SELECT * FROM `$tablaEventos`");
+    // 
+    foreach ($eventos as $evento) {
+        $result .= '<tr>
+            <td>'.$evento->ID.'</td>
+            <td>'.$evento->nombre.'</td>
+            <td>'.$evento->sala.'</td>
+        </tr>';
+    }
+    
+    echo $result;
+}
+
+# TODO: CREAR TABLA PARA ALMACENAR DATOS DE COMPRAS 
+# CREAR INTERFAZ PARA COMPRAR ASIENTOS,
+# CREAR INTERFAZ PARA CREAR NUEVAS SALAS Y EVENTOS
+#   - Y CONVERTIRLOS EN CUSTOM TYPES POSTS AUTOMÁTICAMENTE
+# ALTERAR TABLAS PARA AÑADIR LLAVES FORÁNEAS
+# ELIMINAR TABLAS AL DESACTIVAR PLUGIN
